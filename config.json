@@ -1,0 +1,16 @@
+{
+  "location": {
+    "latitude": 0,
+    "longitude": 0,
+    "city": "Berkeley, CA"
+  },
+  "timezone": "America/Los_Angeles",
+  "display": {
+    "fpsMax": 5,
+    "fontCapabilities": ["nerdFont", "braille", "truecolor"]
+  },
+  "schedule": {
+    "displayOn": "06:30",
+    "displayOff": "23:00"
+  }
+}
