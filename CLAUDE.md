@@ -17,7 +17,7 @@ export function render(canvas, data, state) { /* draw here */ }
 // Optional — animation
 export const fps = 3  // 1-5, omit for static
 export function setup(canvas, data) { return { /* state */ } }
-export function update(canvas, data, frame, state) { /* animate */ }
+export function update(canvas, data, frame, state) { /* advance state AND redraw the full frame */ }
 export function teardown() { /* cleanup */ }
 ```
 
@@ -67,6 +67,32 @@ data.config     — contents of config.json
 ```
 
 ### Animation
+
+Each frame the framework **clears the canvas** and then asks your creation to
+draw it: on the first frame it calls `render()`, and on every frame after it
+calls `update()`. Because the canvas is wiped each time, **`update()` must draw
+the entire scene, not just advance state** — think of it as `render()` with
+motion. The common mistake is to only mutate state in `update()` and leave the
+drawing in `render()`; that makes the piece vanish after the first frame. Two
+correct patterns:
+
+```js
+// Pattern A — draw directly in update()
+export function update(canvas, data, frame, state) {
+  state.phase += 0.05
+  drawScene(canvas, state, frame.elapsed)   // fully redraws every frame
+}
+
+// Pattern B — advance, then delegate to render()
+export function update(canvas, data, frame, state) {
+  state.phase += 0.05
+  render(canvas, data, state)               // render() does the full draw
+}
+```
+
+(As a safety net the framework will fall back to calling `render()` itself if
+an `update()` leaves the canvas blank — but write `update()` to draw so the
+animation actually moves.)
 
 The `frame` parameter in `update()`:
 - `frame.count` — frame number (0-based)

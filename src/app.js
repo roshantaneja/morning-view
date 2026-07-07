@@ -27,6 +27,16 @@ function overlayText(canvas, x, y, text, fg, bg) {
   }
 }
 
+function canvasIsBlank(canvas) {
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      const cell = canvas.getCell(x, y);
+      if (cell.bg != null || cell.char !== ' ') return false;
+    }
+  }
+  return true;
+}
+
 function renderOverlays(canvas, creation) {
   const pad = 2;
   const time = formatTime();
@@ -58,6 +68,7 @@ export default function App() {
   const dataRef = useRef(null);
   const frameRef = useRef({ count: 0, elapsed: 0, dt: 0, lastTime: 0 });
   const stateRef = useRef(null);
+  const updateDrawsRef = useRef(true);
 
   useEffect(() => {
     let animationTimer = null;
@@ -103,6 +114,16 @@ export default function App() {
               frameRef.current.lastTime = now;
               frameRef.current.elapsed += frameRef.current.dt;
               creation.update(canvas, data, frameRef.current, stateRef.current);
+              // A well-formed update() redraws the whole frame. Some creations
+              // only advance state in update() and draw in render(); left alone
+              // those go blank after frame 0. Detect that once and fall back to
+              // calling render() every frame so the piece never vanishes.
+              if (!updateDrawsRef.current) {
+                creation.render(canvas, data, stateRef.current);
+              } else if (creation.render && canvasIsBlank(canvas)) {
+                updateDrawsRef.current = false;
+                creation.render(canvas, data, stateRef.current);
+              }
             } else {
               creation.render(canvas, data, stateRef.current);
             }
