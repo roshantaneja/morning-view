@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "morning-view",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"]
+    }
+  ]
+}

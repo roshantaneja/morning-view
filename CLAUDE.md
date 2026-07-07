@@ -77,6 +77,7 @@ The `state` returned from `setup()` is passed to both `render()` and `update()`.
 
 ### Rules
 
+- **Only modify files under `creations/`** — the framework (`src/`, `config.json`, `CLAUDE.md`, `pi/`, `package.json`) is protected by a pre-commit hook and must not be changed by automated workflows
 - Test the creation runs without error before committing: `timeout 5 node src/index.js`
 - The display has no keyboard or mouse — do not require interaction
 - Keep animations gentle (1-3 FPS preferred) — this runs on a Raspberry Pi

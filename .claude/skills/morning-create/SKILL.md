@@ -158,6 +158,23 @@ git commit -m "art: <short description of the creation>"
 git push origin main
 ```
 
+## Boundary Rules
+
+**You may ONLY create or modify files under `creations/`.** Do not touch any framework files:
+- `src/` — the rendering engine, canvas, theme, loader, data fetcher
+- `config.json` — display configuration
+- `CLAUDE.md` — project documentation
+- `package.json` / `package-lock.json` — dependencies
+- `pi/` — Raspberry Pi setup scripts
+- `.claude/` — skill definitions
+
+A pre-commit hook enforces this — if you stage framework files, the commit will be rejected. Work within the canvas API as documented; if something is missing, leave it for the user to add.
+
+Only stage `creations/` files in your commit:
+```bash
+git add creations/
+```
+
 ## Important Notes
 
 - This skill is designed to run autonomously via scheduled task. Do not ask the user for input — just create something wonderful.
