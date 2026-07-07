@@ -7,9 +7,9 @@
   "timezone": "America/Los_Angeles",
   "display": {
     "fpsMax": 10,
-    "speed": 1,
+    "speed": 3,
     "fontCapabilities": ["nerdFont", "braille", "truecolor"],
-    "rotation": 90
+    "rotation": 0
   },
   "schedule": {
     "displayOn": "06:30",
