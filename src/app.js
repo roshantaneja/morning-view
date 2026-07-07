@@ -90,6 +90,11 @@ export default function App() {
       dataRef.current = data;
       creationRef.current = creation;
       const fpsMax = data.config?.display?.fpsMax || 5;
+      // Global animation "liveliness" dial from config.json (default 1).
+      // Scales both the frame rate (more redraws/sec, up to fpsMax) and the
+      // animation clock (frame.dt/elapsed), so time-based motion also speeds
+      // up. Clamped to a sane range so it can't peg the Pi's CPU.
+      const speed = Math.max(0.25, Math.min(data.config?.display?.speed || 1, 4));
 
       function renderFrame() {
         const canvas = canvasRef.current;
@@ -108,10 +113,11 @@ export default function App() {
               creation.render(canvas, data, stateRef.current);
             } else if (creation.update) {
               const now = Date.now();
-              frameRef.current.dt = frameRef.current.lastTime
+              const realDt = frameRef.current.lastTime
                 ? (now - frameRef.current.lastTime) / 1000
                 : 0;
               frameRef.current.lastTime = now;
+              frameRef.current.dt = realDt * speed;
               frameRef.current.elapsed += frameRef.current.dt;
               creation.update(canvas, data, frameRef.current, stateRef.current);
               // A well-formed update() redraws the whole frame. Some creations
@@ -146,7 +152,7 @@ export default function App() {
       setReady(true);
 
       const fps = creation?.fps
-        ? Math.min(Math.max(creation.fps, 1), fpsMax)
+        ? Math.min(Math.max(creation.fps * speed, 1), fpsMax)
         : 0;
 
       if (fps > 0 && creation?.update) {

@@ -6,7 +6,8 @@
   },
   "timezone": "America/Los_Angeles",
   "display": {
-    "fpsMax": 5,
+    "fpsMax": 10,
+    "speed": 1,
     "fontCapabilities": ["nerdFont", "braille", "truecolor"],
     "rotation": 90
   },
