@@ -16,7 +16,7 @@ echo ""
 # gives truecolor and fontconfig fonts with no desktop environment.
 echo "Installing system packages..."
 sudo apt-get update -qq
-sudo apt-get install -y cage foot ddcutil v4l-utils unzip fontconfig curl git
+sudo apt-get install -y cage foot ddcutil v4l-utils unzip fontconfig curl git seatd
 
 # Install nvm and Node 20
 export NVM_DIR="$HOME/.nvm"
@@ -82,6 +82,15 @@ sudo visudo -cf "$SUDOERS_TMP"
 sudo install -m 440 "$SUDOERS_TMP" /etc/sudoers.d/morning-view
 rm -f "$SUDOERS_TMP"
 
+# Seat/display access for cage. cage (via wlroots/libseat) needs a seat to
+# become DRM master on tty1; without this it exits 1 instantly in a crash loop.
+# Give the user device access and enable seatd as a reliable fallback for when
+# logind's session isn't marked active.
+echo "Granting seat + display access..."
+sudo usermod -aG video,render,input,tty "$USER"
+sudo systemctl enable --now seatd
+sudo usermod -aG _seatd "$USER" 2>/dev/null || true
+
 # Create systemd service — runs cage (Wayland kiosk), which runs foot, which
 # runs the app. Conflicts/After getty@tty1: take exclusive ownership of tty1,
 # otherwise console-autologin getty hangs up our TTY and the app dies
@@ -111,6 +120,7 @@ Environment=PATH=$NODE_BIN_DIR:/usr/local/bin:/usr/bin:/bin
 ExecStart=$SCRIPT_DIR/kiosk-launcher.sh
 Restart=always
 RestartSec=10
+TimeoutStopSec=10
 TTYPath=/dev/tty1
 TTYReset=yes
 TTYVHangup=yes
