@@ -128,6 +128,26 @@ Use ESM imports. The file must export at minimum: `title`, `description`, and `r
 
 All position calculations should be relative to `canvas.width` and `canvas.height`, never hardcoded pixel positions.
 
+**If you animate, `update()` must draw the whole frame.** The framework clears
+the canvas every frame and calls `render()` on frame 0, then `update()` on
+every frame after. If `update()` only advances state and leaves the drawing to
+`render()`, the art shows for one frame and then goes blank. Either draw the
+full scene inside `update()`, or end `update()` by calling `render()`:
+
+```js
+export function render(canvas, data, state) {
+  drawScene(canvas, state)          // full draw from state
+}
+export function update(canvas, data, frame, state) {
+  state.phase += 0.05               // advance
+  render(canvas, data, state)       // ...then redraw the whole frame
+}
+```
+
+When testing (Step 5), don't just check that it starts — let it run a few
+seconds and confirm the animation still fills the screen after the first
+frame, not just at startup.
+
 ## Step 5: Test it
 
 Run the app to verify no crashes:

@@ -75,4 +75,5 @@ export function render(canvas, data, state) {
 
 export function update(canvas, data, frame, state) {
   state.phase += 0.05
+  render(canvas, data, state)
 }
