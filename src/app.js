@@ -3,6 +3,7 @@ import { Text, Box, useStdout } from 'ink';
 import { Canvas } from './canvas.js';
 import { fetchDataBundle } from './data.js';
 import { loadCreation } from './loader.js';
+import { drawBigText, measureBig, wrapText } from './bigfont.js';
 
 const h = React.createElement;
 
@@ -19,14 +20,6 @@ function formatDate() {
   return `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}`;
 }
 
-function overlayText(canvas, x, y, text, fg, bg) {
-  for (let i = 0; i < text.length; i++) {
-    if (x + i >= 0 && x + i < canvas.width) {
-      canvas.setCell(x + i, y, text[i], fg, bg);
-    }
-  }
-}
-
 function canvasIsBlank(canvas) {
   for (let y = 0; y < canvas.height; y++) {
     for (let x = 0; x < canvas.width; x++) {
@@ -37,24 +30,46 @@ function canvasIsBlank(canvas) {
   return true;
 }
 
-function renderOverlays(canvas, creation) {
+function renderOverlays(canvas, creation, data) {
   const pad = 2;
+  const disp = data?.config?.display || {};
+  // Block-letter scales (cells per font pixel). Clamped so an over-large value
+  // can't overflow the grid or bog down the Pi. Clock defaults to double the
+  // label size so time reads from across the room.
+  const textScale = Math.max(1, Math.min(Math.round(disp.textScale || 1), 6));
+  const clockScale = Math.max(1, Math.min(Math.round(disp.clockScale || 2), 8));
+
   const time = formatTime();
   const date = formatDate();
 
-  overlayText(canvas, canvas.width - time.length - pad, pad, time, '#888888');
-  overlayText(canvas, canvas.width - date.length - pad, pad + 1, date, '#666666');
+  // Clock — big, top-right.
+  const clk = measureBig(time, clockScale);
+  drawBigText(canvas, canvas.width - clk.w - pad, pad, time, clockScale, '#ffffff');
 
-  if (creation) {
-    const title = creation.title || '';
-    const desc = creation.description || '';
-    if (title) {
-      overlayText(canvas, pad, canvas.height - pad - (desc ? 2 : 1), title, '#888888');
-    }
-    if (desc) {
-      const maxLen = canvas.width - pad * 2;
-      const truncated = desc.length > maxLen ? desc.slice(0, maxLen - 1) + '…' : desc;
-      overlayText(canvas, pad, canvas.height - pad - 1, truncated, '#666666');
+  // Date — label size, right-aligned under the clock.
+  const dm = measureBig(date, textScale);
+  drawBigText(canvas, canvas.width - dm.w - pad, pad + clk.h + textScale, date, textScale, '#cfcfcf');
+
+  // Title + description — label size, stacked at the bottom-left. The
+  // description wraps and is capped so it can't swallow the whole screen.
+  const lineGap = textScale;
+  const lineH = 5 * textScale;
+  const maxChars = Math.max(3, Math.floor((canvas.width - pad * 2) / ((3 + 1) * textScale)));
+  const lines = [];
+  if (creation?.title) lines.push(creation.title);
+  if (creation?.description) {
+    const wrapped = wrapText(creation.description, maxChars);
+    const capped = wrapped.slice(0, 2);
+    if (wrapped.length > 2) capped[1] = capped[1].slice(0, Math.max(0, maxChars - 1)) + '…';
+    lines.push(...capped);
+  }
+  if (lines.length) {
+    const blockH = lines.length * lineH + (lines.length - 1) * lineGap;
+    let y = canvas.height - pad - blockH;
+    for (let i = 0; i < lines.length; i++) {
+      const fg = i === 0 ? '#ffffff' : '#cfcfcf';
+      drawBigText(canvas, pad, y, lines[i], textScale, fg);
+      y += lineH + lineGap;
     }
   }
 }
@@ -143,7 +158,7 @@ export default function App() {
           canvas.drawText(canvas.centerX(msg), canvas.centerY(1), msg, '#666666');
         }
 
-        renderOverlays(canvas, creation);
+        renderOverlays(canvas, creation, data);
         setRows(canvas.toAnsiRows());
         frameRef.current.count++;
       }

@@ -8,6 +8,8 @@
   "display": {
     "fpsMax": 10,
     "speed": 3,
+    "textScale": 1,
+    "clockScale": 2,
     "fontCapabilities": ["nerdFont", "braille", "truecolor"],
     "rotation": 0
   },
