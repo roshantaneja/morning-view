@@ -22,4 +22,7 @@ case "$ROTATION" in
   270) FLAGS=(-r -r -r) ;;
 esac
 
-exec /usr/bin/cage "${FLAGS[@]}" -- foot node src/index.js
+# -s allows VT switching so a plugged-in keyboard can always reach a console
+# with Ctrl+Alt+F2 (the escape hatch when SSH isn't handy). Note: switching
+# back to tty1 kills the service (getty conflict) — restart it when done.
+exec /usr/bin/cage -s "${FLAGS[@]}" -- foot node src/index.js
