@@ -47,7 +47,7 @@ async function tryLoadCreation(filename) {
   }
 }
 
-export async function loadCreation() {
+async function pickCreation() {
   const files = getCreationFiles();
   if (files.length === 0) return null;
 
@@ -65,4 +65,14 @@ export async function loadCreation() {
   }
 
   return null;
+}
+
+export async function loadCreation() {
+  const creation = await pickCreation();
+  if (creation) {
+    // Lands in the systemd journal (StandardError=journal) — lets pi/doctor.sh
+    // and `journalctl -u morning-view` answer "which art is it showing?"
+    process.stderr.write(`Loaded creation: ${creation.filename}\n`);
+  }
+  return creation;
 }

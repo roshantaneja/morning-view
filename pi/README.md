@@ -59,8 +59,11 @@ Everything is installed and wired up by `pi/setup.sh`.
 
 | Time | Job |
 |------|-----|
-| 6:30 AM | `morning-view.sh` — fetch + hard reset to origin/main, `npm ci` if deps changed, restart service (which also wakes the display) |
+| 6:30 AM | `morning-view.sh` — fetch + hard reset to origin/main (retries, self-heals stale git locks), `npm ci` if deps changed, restart service (which also wakes the display) |
+| Every boot | `morning-view.sh` again (after 45s) — cron never re-runs a missed 6:30, so this catches up a Pi that was powered off overnight |
 | 11:00 PM | `display-power.sh off` — put the monitor to sleep via DDC/CI (`ddcutil`), falling back to HDMI-CEC |
+
+Update logs land in `~/morning-view-pull.log` and `~/morning-view-display.log`.
 
 After setup, verify your monitor supports scheduled sleep: `./pi/display-power.sh off`
 (screen should sleep), then `./pi/display-power.sh on`. If neither DDC/CI nor
@@ -89,6 +92,17 @@ sudo systemctl restart morning-view
 
 ## Troubleshooting
 
+Start with the doctor — it checks the whole pipeline (cron, git, sudo rule,
+creations, service) and names the fix for anything broken:
+```bash
+./pi/doctor.sh
+```
+
+- **Stuck on the same artwork every day**: Run `./pi/doctor.sh`. Usual causes:
+  the daily cron isn't installed (re-run `./pi/setup.sh`), a stale git lock
+  from a power loss (the updater now cleans these itself), or the Pi was off
+  at 6:30 (the @reboot entry now catches that up). `~/morning-view-pull.log`
+  shows what each update run did.
 - **Only the clock and title are visible, no art**: The app is running on the
   raw kernel console instead of inside cage+foot. Re-run `./pi/setup.sh` to
   regenerate the service, then `sudo systemctl daemon-reload && sudo systemctl

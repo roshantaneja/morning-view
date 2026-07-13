@@ -139,16 +139,20 @@ sudo systemctl daemon-reload
 sudo systemctl enable morning-view
 
 # Cron: daily update+restart at 6:30 (which also wakes the display), display
-# off at 23:00. Lines are tagged so re-runs only ever replace our own entries
+# off at 23:00, and a catch-up update at every boot — cron never re-runs a
+# missed 6:30, so a Pi that was powered off overnight would otherwise stay on
+# yesterday's art all day. Logs go to $HOME (not /tmp) so they survive
+# reboots. Lines are tagged so re-runs only ever replace our own entries
 # (an unanchored 'morning-view' filter would eat unrelated user cron lines
 # that merely mention the repo path). The `|| true` keeps a fresh/empty
 # crontab from aborting under pipefail and installing an empty crontab.
 echo "Setting up cron jobs..."
-chmod +x "$SCRIPT_DIR/morning-view.sh" "$SCRIPT_DIR/kiosk-launcher.sh" "$SCRIPT_DIR/display-power.sh"
+chmod +x "$SCRIPT_DIR/morning-view.sh" "$SCRIPT_DIR/kiosk-launcher.sh" "$SCRIPT_DIR/display-power.sh" "$SCRIPT_DIR/doctor.sh"
 CRON_TAG='# managed-by:morning-view'
-CRON_PULL="30 6 * * * $SCRIPT_DIR/morning-view.sh >> /tmp/morning-view-pull.log 2>&1 $CRON_TAG"
-CRON_DISPLAY_OFF="0 23 * * * $SCRIPT_DIR/display-power.sh off >> /tmp/morning-view-display.log 2>&1 $CRON_TAG"
-{ crontab -l 2>/dev/null | grep -vF "$CRON_TAG" | grep -vF 'vcgencmd display_power' | grep -vF "$SCRIPT_DIR/morning-view.sh" || true; echo "$CRON_PULL"; echo "$CRON_DISPLAY_OFF"; } | crontab -
+CRON_PULL="30 6 * * * $SCRIPT_DIR/morning-view.sh >> $HOME/morning-view-pull.log 2>&1 $CRON_TAG"
+CRON_BOOT="@reboot sleep 45; $SCRIPT_DIR/morning-view.sh >> $HOME/morning-view-pull.log 2>&1 $CRON_TAG"
+CRON_DISPLAY_OFF="0 23 * * * $SCRIPT_DIR/display-power.sh off >> $HOME/morning-view-display.log 2>&1 $CRON_TAG"
+{ crontab -l 2>/dev/null | grep -vF "$CRON_TAG" | grep -vF 'vcgencmd display_power' | grep -vF "$SCRIPT_DIR/morning-view.sh" || true; echo "$CRON_PULL"; echo "$CRON_BOOT"; echo "$CRON_DISPLAY_OFF"; } | crontab -
 
 echo ""
 echo "=== Setup complete ==="
